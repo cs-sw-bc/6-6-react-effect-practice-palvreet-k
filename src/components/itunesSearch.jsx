@@ -1,4 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import CircularProgress from '@mui/material/CircularProgress';
+import Box from '@mui/material/Box';
+
 
 // iTunes Search API
 // https://itunes.apple.com/search?term=SEARCH_TERM&media=music&limit=10
@@ -41,20 +44,55 @@ export default function ItunesSearch() {
 
   // TODO 1: Declare state variables for tracks, loading, and error
 
+  const [tracks, setTracks] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const API_URL = `https://itunes.apple.com/search?term=${searchTerm}&media=music&limit=10`;
+
   // TODO 2: Write a useEffect that fetches when the component mounts
   //         OR write a handleSearch function that fetches on form submit
   //         - Build the URL using searchTerm
   //         - Use async / await with try / catch / finally
   //         - Check response.ok before parsing JSON
   //         - The tracks live in response.results
+  useEffect(() => {
+    if (!searchTerm) return; // Don't fetch if searchTerm is empty
+    async function fetchTrack() {
+      setLoading(true);
+      try {
+        const response = await fetch(API_URL);
+        if (!response.ok) {
+          throw new Error("There was some problem fetching Tracks, Please try again");
+        }
+        const data = await response.json();
+        setTracks(data.results);
+      }
+      catch (err) {
+        setError(err.message);
+      }
+      finally {
+        setLoading(false);
+      }
+    };
+    fetchTrack();
+  }, [searchTerm]);
 
   // TODO 3: Handle loading state — render a loading indicator
+  if(loading)
+    return (
+    <Box sx={{ display: 'flex' }}>
+      <CircularProgress />
+    </Box>
+  );
   // TODO 4: Handle error state — render an error message
+  if (error) return <p>{error}</p>;
 
-  function handleSearch(e) {
-    e.preventDefault();
-    // TODO: trigger your fetch here
-  }
+  // function handleSearch(e) {
+  //   e.preventDefault();
+  //   // TODO: trigger your fetch here
+  //   setLoading(true);
+  // }
 
   return (
     <div style={{ fontFamily: "sans-serif", maxWidth: "780px", margin: "0 auto", padding: "24px" }}>
@@ -63,7 +101,7 @@ export default function ItunesSearch() {
 
       {/* Search form */}
       <form
-        onSubmit={handleSearch}
+        // onSubmit={handleSearch}
         style={{ display: "flex", gap: "8px", marginBottom: "24px" }}
       >
         <input
@@ -81,6 +119,7 @@ export default function ItunesSearch() {
         />
         <button
           type="submit"
+          disabled={loading}
           style={{
             padding: "10px 20px",
             borderRadius: "8px",
@@ -99,6 +138,15 @@ export default function ItunesSearch() {
                  Use a .map() over your tracks state
                  Pass title, artist, album, image, genre as props to each TrackCard */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: "16px" }}>
+        {tracks.map((track) => (
+          <TrackCard
+            title={track.trackName}
+            artist={track.artistName}
+            album={track.collectionName}
+            image={track.artworkUrl100}
+            genre={track.primaryGenreName}
+          />
+        ))}
 
       </div>
 
